@@ -1,0 +1,28 @@
+{
+    "$schema": "https://raw.githubusercontent.com/escapepz/project-zomboid-studio/refs/heads/42.17.0/pzstudio.schema.json",
+    "workshop": {
+        "title": "Stealth Overhaul",
+        "visibility": "unlisted",
+        "tags": [
+            "Build 42",
+            "Interface",
+            "QoL"
+        ]
+    },
+    "mods": {
+        "stealthoverhaul": {
+            "name": "Stealth Overhaul",
+            "description": "A deterministic zombie visual-detection overhaul with awareness indicators and vision cones.",
+            "author": "Connor",
+            "modversion": "1.0",
+            "versionMin": "42.0",
+            "require": "\\ZombieBuddy",
+            "javaJarFile": "media/java/StealthOverhaul.jar",
+            "javaPkgName": "com.connor.stealthoverhaul",
+            "build": {
+                "modInfo": "auto"
+            }
+        }
+    },
+    "excludes": []
+}

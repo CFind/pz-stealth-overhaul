@@ -1,0 +1,9 @@
+id=stealthoverhaul
+name=Stealth Overhaul
+description=A deterministic zombie visual-detection overhaul with awareness indicators and vision cones.
+author=Connor
+modversion=1.0
+versionMin=42.0
+require=\ZombieBuddy
+javaJarFile=media/java/StealthOverhaul.jar
+javaPkgName=com.connor.stealthoverhaul

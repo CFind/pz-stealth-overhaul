@@ -1,0 +1,8 @@
+[h1]Stealth Overhaul[/h1]
+
+Stealth Overhaul is a Project Zomboid Build 42 mod in development. It replaces random
+zombie visual detection with deterministic awareness, then shows that state through
+awareness indicators and obstacle-aware vision cones.
+
+The gameplay changes use ZombieBuddy and must run on every process that can simulate a
+zombie. Client Lua handles all display and rendering.

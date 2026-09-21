@@ -1,0 +1,9 @@
+{
+    "extensions.ignoreRecommendations": true,
+    "files.associations": {},
+    "[lua]": {
+        "editor.defaultFormatter": "JohnnyMorganz.stylua"
+    },
+    "lua.debug.settings.luaVersion": "lua51",
+    "java.compile.nullAnalysis.mode": "automatic"
+}

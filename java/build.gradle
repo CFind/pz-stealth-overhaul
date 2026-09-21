@@ -1,0 +1,48 @@
+plugins {
+    id 'java'
+}
+
+java {
+    // Game classes in projectzomboid.jar are version 69 (Java 25). javac 17
+    // cannot read them; compile with JDK 26, emit Java 25 for the bundled JRE
+    // (projectzomboid/jre64, 25.0.1).
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(26)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+}
+
+repositories {
+    mavenCentral()
+}
+
+def pzGameDir = file(findProperty('pzGameDir') ?: '/home/red5/Projects/project_zomboid/ProjectZomboid')
+def zombieBuddyJar = file("${pzGameDir}/ZombieBuddy.jar")
+def gameJar = file("${pzGameDir}/projectzomboid/projectzomboid.jar")
+
+dependencies {
+    if (zombieBuddyJar.exists()) {
+        compileOnly files(zombieBuddyJar)
+        testImplementation files(zombieBuddyJar)
+    }
+    if (gameJar.exists()) {
+        compileOnly files(gameJar)
+    }
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+}
+
+def packagedJarDir = file("${rootDir}/../stealthoverhaul/42/media/java")
+
+tasks.named('jar', Jar) {
+    archiveFileName = 'StealthOverhaul.jar'
+    destinationDirectory = packagedJarDir
+}
