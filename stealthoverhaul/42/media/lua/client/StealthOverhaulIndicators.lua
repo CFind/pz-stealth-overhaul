@@ -34,23 +34,11 @@ require "ISUI/ISPanel"
 -- While RMB is held, any isOverElement hit also marks consumedRClick
 -- (ui/UIManager.java:787-793). maxDrawHeight 0 fails that hit test
 -- (ui/UIManager.java:494-499) without clipping Lua drawing.
+-- Display tunables are mod options (StealthOverhaulOptions.lua). MAX_PLAYERS
+-- matches IsoPlayer.players, which has four local slots
+-- (characters/IsoPlayer.java:288).
 
-local SHOW_INDICATORS = true
-local DISPLAY_CAP = 12
-local DISCOVER_RANGE_SQ = 20 * 20
-local DISCOVER_MS = 200
 local MAX_PLAYERS = 4
-local RAY_COUNT = 16
-local BAR_WIDTH = 28
-local BAR_HEIGHT = 5
-local ANCHOR_OFFSET_Y = -40
-local DUMP_INTERVAL_MS = 1000
-local DUMP_RANGE_SQUARED = 20 * 20
-
--- Prototype colors. Not a visual commitment.
-local FILL_SUSPICIOUS = { r = 0.90, g = 0.75, b = 0.20, a = 0.90 }
-local FILL_DETECTED = { r = 0.90, g = 0.18, b = 0.12, a = 0.95 }
-local BAR_BACK = { r = 0.05, g = 0.05, b = 0.05, a = 0.70 }
 
 local lastDumpMs = 0
 
@@ -115,6 +103,8 @@ local function newSlot()
     ---@field revision integer
     ---@field lastRefreshMs number
     ---@field validCone boolean
+    ---@field playerCanSee boolean
+    ---@field presentationKey string
     local slot = {
         zombie = nil,
         seen = false,
@@ -134,8 +124,10 @@ local function newSlot()
         revision = -1,
         lastRefreshMs = 0,
         validCone = false,
+        playerCanSee = true,
+        presentationKey = "",
     }
-    for i = 1, RAY_COUNT do
+    for i = 1, StealthOverhaul.rayCount() do
         slot.wx[i] = 0
         slot.wy[i] = 0
         slot.innerWx[i] = 0
@@ -220,7 +212,7 @@ function Layer:isRenderableZombie(player, zombie)
     if zombie == nil or zombie:isDead() then
         return false
     end
-    if player:DistToSquared(zombie) > DISCOVER_RANGE_SQ then
+    if player:DistToSquared(zombie) > StealthOverhaul.discoverRangeSq() then
         return false
     end
     local square = zombie:getCurrentSquare()
@@ -251,7 +243,8 @@ function Layer:discover(player)
     end
 
     local slots = self.slots
-    for i = 1, DISPLAY_CAP do
+    local cap = StealthOverhaul.displayCap()
+    for i = 1, cap do
         slots[i].seen = false
     end
 
@@ -266,7 +259,7 @@ function Layer:discover(player)
             local existing = nil
             local empty = nil
             local worst = nil
-            for s = 1, DISPLAY_CAP do
+            for s = 1, cap do
                 local slot = slots[s]
                 if slot.zombie == zombie then
                     existing = slot
@@ -303,7 +296,7 @@ function Layer:discover(player)
         end
     end
 
-    for i = 1, DISPLAY_CAP do
+    for i = 1, cap do
         local slot = slots[i]
         if not slot.seen then
             slot.zombie = nil
@@ -315,7 +308,7 @@ function Layer:discover(player)
 end
 
 function Layer:clearSlots()
-    for i = 1, DISPLAY_CAP do
+    for i = 1, #self.slots do
         local slot = self.slots[i]
         slot.zombie = nil
         slot.seen = false
@@ -342,6 +335,22 @@ function Layer:syncViewport()
     self:setHeight(height)
 end
 
+function Layer:ensureSlots()
+    local cap = StealthOverhaul.displayCap()
+    local slots = self.slots
+    while #slots < cap do
+        slots[#slots + 1] = newSlot()
+    end
+    for i = cap + 1, #slots do
+        local slot = slots[i]
+        slot.zombie = nil
+        slot.seen = false
+        slot.validCone = false
+        slot.awareness = 0
+        slot.state = 0
+    end
+end
+
 function Layer:update()
     self.patchActive = isPatchActive()
     if not self.patchActive then
@@ -361,7 +370,8 @@ function Layer:update()
     self:syncViewport()
 
     local now = getTimestampMs()
-    if now - self.lastDiscoverMs >= DISCOVER_MS then
+    self:ensureSlots()
+    if now - self.lastDiscoverMs >= StealthOverhaul.discoverMs() then
         self.lastDiscoverMs = now
         self:discover(player)
     end
@@ -386,6 +396,17 @@ function Layer:revalidateSlot(slot, player)
     end
     slot.awareness = StealthOverhaulAPI.getAwareness(zombie, player)
     slot.state = StealthOverhaulAPI.getAwarenessState(zombie, player)
+    slot.playerCanSee = true
+    if StealthOverhaul.isVisionBlockedBetween ~= nil then
+        slot.playerCanSee = not StealthOverhaul.isVisionBlockedBetween(
+            player:getX(),
+            player:getY(),
+            player:getZ(),
+            zombie:getX(),
+            zombie:getY(),
+            zombie:getZ()
+        )
+    end
     return true
 end
 
@@ -394,26 +415,29 @@ end
 ---@param fill number
 ---@param detected boolean
 function Layer:drawAwarenessBar(x, y, fill, detected)
-    local left = x - BAR_WIDTH * 0.5
-    local top = y + ANCHOR_OFFSET_Y
-    if left + BAR_WIDTH < 0 or left > self.width or top + BAR_HEIGHT < 0 or top > self.height then
+    local barWidth = StealthOverhaul.barWidth()
+    local barHeight = StealthOverhaul.barHeight()
+    local left = x - barWidth * 0.5
+    local top = y + StealthOverhaul.anchorOffsetY()
+    if left + barWidth < 0 or left > self.width or top + barHeight < 0 or top > self.height then
         return
     end
-    self:drawRect(left, top, BAR_WIDTH, BAR_HEIGHT, BAR_BACK.a, BAR_BACK.r, BAR_BACK.g, BAR_BACK.b)
-    local color = detected and FILL_DETECTED or FILL_SUSPICIOUS
+    local back = StealthOverhaul.barBackColor()
+    self:drawRect(left, top, barWidth, barHeight, back.a, back.r, back.g, back.b)
+    local color = detected and StealthOverhaul.detectedColor() or StealthOverhaul.suspiciousColor()
     if fill < 0 then
         fill = 0
     elseif fill > 1 then
         fill = 1
     end
-    local filled = math.floor(BAR_WIDTH * fill)
+    local filled = math.floor(barWidth * fill)
     if fill > 0 and filled < 1 then
         filled = 1
     end
     if filled > 0 then
-        self:drawRect(left, top, filled, BAR_HEIGHT, color.a, color.r, color.g, color.b)
+        self:drawRect(left, top, filled, barHeight, color.a, color.r, color.g, color.b)
     end
-    self:drawRectBorder(left, top, BAR_WIDTH, BAR_HEIGHT, color.a, color.r, color.g, color.b)
+    self:drawRectBorder(left, top, barWidth, barHeight, color.a, color.r, color.g, color.b)
 end
 
 function Layer:render()
@@ -429,8 +453,10 @@ function Layer:render()
     local dx = -getPlayerScreenLeft(playerIndex)
     local dy = -getPlayerScreenTop(playerIndex)
     local threshold = StealthOverhaulAPI.getDetectionThreshold()
+    self:ensureSlots()
 
-    for i = 1, DISPLAY_CAP do
+    local cap = StealthOverhaul.displayCap()
+    for i = 1, cap do
         self:revalidateSlot(self.slots[i], player)
     end
 
@@ -438,16 +464,16 @@ function Layer:render()
         StealthOverhaul.drawCones(self, player, dx, dy)
     end
 
-    if not SHOW_INDICATORS then
+    if not StealthOverhaul.showIndicators() then
         return
     end
 
-    for i = 1, DISPLAY_CAP do
+    for i = 1, cap do
         local slot = self.slots[i]
         local zombie = slot.zombie
         if zombie ~= nil then
             local showDetected = isDetectedState(slot.state)
-            if slot.awareness > 0 or showDetected then
+            if slot.playerCanSee and (slot.awareness > 0 or showDetected) then
                 local sx = isoToScreenX(playerIndex, zombie:getX(), zombie:getY(), zombie:getZ()) + dx
                 local sy = isoToScreenY(playerIndex, zombie:getX(), zombie:getY(), zombie:getZ()) + dy
                 local fill = 0
@@ -479,7 +505,8 @@ function Layer:new(playerIndex)
     o.coneCursor = 1
     o.patchActive = false
     o.slots = {}
-    for i = 1, DISPLAY_CAP do
+    local cap = StealthOverhaul.displayCap()
+    for i = 1, cap do
         o.slots[i] = newSlot()
     end
     return o
@@ -558,7 +585,7 @@ local function onTick(tick)
         return
     end
     local now = getTimestampMs()
-    if now - lastDumpMs < DUMP_INTERVAL_MS then
+    if now - lastDumpMs < StealthOverhaul.dumpIntervalMs() then
         return
     end
     lastDumpMs = now
@@ -578,7 +605,7 @@ local function onTick(tick)
         if player ~= nil and not player:isDead() then
             for i = 0, zombies:size() - 1 do
                 local zombie = zombies:get(i)
-                if zombie ~= nil and not zombie:isDead() and player:DistToSquared(zombie) <= DUMP_RANGE_SQUARED then
+                if zombie ~= nil and not zombie:isDead() and player:DistToSquared(zombie) <= StealthOverhaul.dumpRangeSq() then
                     dumpPair(zombie, player)
                 end
             end
@@ -638,8 +665,6 @@ StealthOverhaul.onTick = onTick
 StealthOverhaul.onGameStartIndicators = onGameStart
 StealthOverhaul.onCreatePlayer = onCreatePlayer
 StealthOverhaul.onPlayerDeath = onPlayerDeath
-StealthOverhaul.displayCap = DISPLAY_CAP
-StealthOverhaul.rayCount = RAY_COUNT
 
 Events.OnTick.Add(onTick)
 Events.OnGameStart.Add(onGameStart)

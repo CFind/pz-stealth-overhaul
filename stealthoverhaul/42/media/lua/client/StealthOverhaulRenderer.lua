@@ -23,23 +23,15 @@
 
 -- Events.OnGameStart: no parameters (docs/api/Events.md). Client-only.
 -- LosUtil.lineClear matches ExposureEvaluator.hasLineOfSight
--- (iso/LosUtil.java:21-85, ignoreDoors=false). World-text pass has depth
--- test off (gameStates/IngameState.java:1111-1113).
-
-local SHOW_CONES = true
-local INNER_BAND = 0.45
-local CONE_MAX_AGE_MS = 400
-local CONE_REFRESH_PER_UPDATE = 2
-local LOS_STEPS = 8
-local MOVE_SQ = 0.15 * 0.15
-local LOOK_DOT_MIN = 0.995
-local SAMPLE_DISTANCE = 2.0
-local HALF_ANGLE_ITERS = 16
-
--- Prototype overlay colors. Not a visual commitment.
-local CONE_INNER = { r = 0.95, g = 0.85, b = 0.20, a = 0.22 }
-local CONE_OUTER = { r = 0.95, g = 0.55, b = 0.10, a = 0.10 }
-local CONE_LINE = { r = 0.95, g = 0.80, b = 0.25, a = 0.55 }
+-- (iso/LosUtil.java:21-85, ignoreDoors=false). Walls set the vision-matrix
+-- bit and return TestResults.Blocked (IsoGridSquare.java:8273). Closed
+-- opaque doors do the same (IsoDoor.java:1120, IsoGridSquare.java:8187).
+-- lineClear returns the enum by name (ClearThroughWindow, Blocked, ...).
+-- It is not a Lua table, so result:ordinal() throws
+-- (KahluaThread.tableget, console frame 9). Compare the name.
+-- The world-text pass has depth testing off (IngameState.java:1111-1113),
+-- so a bar or cone behind a blocker has to be omitted, not depth-tested.
+-- Cone tunables are mod options (StealthOverhaulOptions.lua).
 
 StealthOverhaul = StealthOverhaul or {}
 
@@ -47,6 +39,8 @@ StealthOverhaul = StealthOverhaul or {}
 local lookScratch = nil
 local cachedRevision = -1
 local cachedHalfAngle = 0
+local cachedSampleDistance = -1
+local cachedHalfAngleIters = -1
 
 ---@return boolean
 local function isPatchActive()
@@ -71,12 +65,38 @@ local function lookVector()
     return lookScratch
 end
 
----@return LosUtil.TestResults|nil
-local function blockedResult()
-    if LosUtil == nil or LosUtil.TestResults == nil then
-        return nil
+---@param result LosUtil.TestResults|nil
+---@return boolean
+local function isBlockedResult(result)
+    return tostring(result) == "Blocked"
+end
+
+---@param x0 number
+---@param y0 number
+---@param z0 number
+---@param x1 number
+---@param y1 number
+---@param z1 number
+---@return boolean
+function StealthOverhaul.isVisionBlockedBetween(x0, y0, z0, x1, y1, z1)
+    if LosUtil == nil then
+        return false
     end
-    return LosUtil.TestResults.Blocked
+    local cell = getCell()
+    if cell == nil then
+        return false
+    end
+    local result = LosUtil.lineClear(
+        cell,
+        math.floor(x0),
+        math.floor(y0),
+        math.floor(z0),
+        math.floor(x1),
+        math.floor(y1),
+        math.floor(z1),
+        false
+    )
+    return isBlockedResult(result)
 end
 
 ---@param cell IsoCell
@@ -85,12 +105,8 @@ end
 ---@param z0 number
 ---@param x1 number
 ---@param y1 number
----@param blocked LosUtil.TestResults|nil
 ---@return boolean
-local function isRayBlocked(cell, x0, y0, z0, x1, y1, blocked)
-    if blocked == nil then
-        return false
-    end
+local function isRayBlocked(cell, x0, y0, z0, x1, y1)
     local z = math.floor(z0)
     local result = LosUtil.lineClear(
         cell,
@@ -102,7 +118,7 @@ local function isRayBlocked(cell, x0, y0, z0, x1, y1, blocked)
         z,
         false
     )
-    return result == blocked
+    return isBlockedResult(result)
 end
 
 ---@param cell IsoCell
@@ -112,19 +128,19 @@ end
 ---@param dx number
 ---@param dy number
 ---@param maxRange number
----@param blocked LosUtil.TestResults|nil
 ---@return number
-local function clippedRange(cell, x0, y0, z0, dx, dy, maxRange, blocked)
+local function clippedRange(cell, x0, y0, z0, dx, dy, maxRange)
     local x1 = x0 + dx * maxRange
     local y1 = y0 + dy * maxRange
-    if not isRayBlocked(cell, x0, y0, z0, x1, y1, blocked) then
+    if not isRayBlocked(cell, x0, y0, z0, x1, y1) then
         return maxRange
     end
     local lo = 0
     local hi = maxRange
-    for _ = 1, LOS_STEPS do
+    local steps = StealthOverhaul.losSteps()
+    for _ = 1, steps do
         local mid = (lo + hi) * 0.5
-        if isRayBlocked(cell, x0, y0, z0, x0 + dx * mid, y0 + dy * mid, blocked) then
+        if isRayBlocked(cell, x0, y0, z0, x0 + dx * mid, y0 + dy * mid) then
             hi = mid
         else
             lo = mid
@@ -136,14 +152,20 @@ end
 ---@return number
 local function coneHalfAngle()
     local revision = StealthOverhaulAPI.getConfigRevision()
-    if revision == cachedRevision and cachedHalfAngle > 0 then
+    local sampleDistance = StealthOverhaul.sampleDistance()
+    local iters = StealthOverhaul.halfAngleIters()
+    if revision == cachedRevision
+        and cachedHalfAngle > 0
+        and sampleDistance == cachedSampleDistance
+        and iters == cachedHalfAngleIters
+    then
         return cachedHalfAngle
     end
     local lo = 0
     local hi = math.pi
-    for _ = 1, HALF_ANGLE_ITERS do
+    for _ = 1, iters do
         local mid = (lo + hi) * 0.5
-        local factor = StealthOverhaulAPI.angleFactor(math.cos(mid), SAMPLE_DISTANCE)
+        local factor = StealthOverhaulAPI.angleFactor(math.cos(mid), sampleDistance)
         if factor > 0 then
             lo = mid
         else
@@ -151,8 +173,46 @@ local function coneHalfAngle()
         end
     end
     cachedRevision = revision
+    cachedSampleDistance = sampleDistance
+    cachedHalfAngleIters = iters
     cachedHalfAngle = lo
     return cachedHalfAngle
+end
+
+---@return string
+local function presentationKey()
+    return string.format(
+        "%d:%.4f:%d:%.4f:%d",
+        StealthOverhaul.rayCount(),
+        StealthOverhaul.innerBand(),
+        StealthOverhaul.losSteps(),
+        StealthOverhaul.sampleDistance(),
+        StealthOverhaul.halfAngleIters()
+    )
+end
+
+---@param slot StealthOverhaulSlot
+---@param rayCount integer
+local function ensureRayCount(slot, rayCount)
+    local current = #slot.wx
+    if current == rayCount then
+        return
+    end
+    if rayCount > current then
+        for i = current + 1, rayCount do
+            slot.wx[i] = 0
+            slot.wy[i] = 0
+            slot.innerWx[i] = 0
+            slot.innerWy[i] = 0
+        end
+        return
+    end
+    for i = current, rayCount + 1, -1 do
+        slot.wx[i] = nil
+        slot.wy[i] = nil
+        slot.innerWx[i] = nil
+        slot.innerWy[i] = nil
+    end
 end
 
 ---@param slot StealthOverhaulSlot
@@ -169,20 +229,23 @@ local function needsConeRefresh(slot, zombie, lookX, lookY, range, revision)
     if slot.revision ~= revision then
         return true
     end
+    if slot.presentationKey ~= presentationKey() then
+        return true
+    end
     local now = getTimestampMs()
-    if now - slot.lastRefreshMs >= CONE_MAX_AGE_MS then
+    if now - slot.lastRefreshMs >= StealthOverhaul.coneMaxAgeMs() then
         return true
     end
     local dx = zombie:getX() - slot.originX
     local dy = zombie:getY() - slot.originY
-    if dx * dx + dy * dy > MOVE_SQ then
+    if dx * dx + dy * dy > StealthOverhaul.moveThresholdSq() then
         return true
     end
     if math.abs(zombie:getZ() - slot.originZ) > 0.01 then
         return true
     end
     local lookDot = lookX * slot.lookX + lookY * slot.lookY
-    if lookDot < LOOK_DOT_MIN then
+    if lookDot < StealthOverhaul.lookDotMin() then
         return true
     end
     if math.abs(range - slot.range) > 0.25 then
@@ -233,16 +296,17 @@ local function sampleCone(slot, player, now)
     end
 
     local half = coneHalfAngle()
-    local rayCount = StealthOverhaul.rayCount or #slot.wx
+    local rayCount = StealthOverhaul.rayCount()
     if rayCount < 2 then
         slot.validCone = false
         return
     end
+    ensureRayCount(slot, rayCount)
+    local innerBand = StealthOverhaul.innerBand()
     local originX = zombie:getX()
     local originY = zombie:getY()
     local originZ = zombie:getZ()
     local span = half * 2
-    local blocked = blockedResult()
     for i = 1, rayCount do
         local t = (i - 1) / (rayCount - 1)
         local angle = -half + span * t
@@ -250,11 +314,11 @@ local function sampleCone(slot, player, now)
         local sa = math.sin(angle)
         local dx = lookX * ca - lookY * sa
         local dy = lookX * sa + lookY * ca
-        local clipped = clippedRange(cell, originX, originY, originZ, dx, dy, range, blocked)
+        local clipped = clippedRange(cell, originX, originY, originZ, dx, dy, range)
         slot.wx[i] = originX + dx * clipped
         slot.wy[i] = originY + dy * clipped
-        slot.innerWx[i] = originX + dx * clipped * INNER_BAND
-        slot.innerWy[i] = originY + dy * clipped * INNER_BAND
+        slot.innerWx[i] = originX + dx * clipped * innerBand
+        slot.innerWy[i] = originY + dy * clipped * innerBand
     end
     slot.originX = originX
     slot.originY = originY
@@ -263,6 +327,7 @@ local function sampleCone(slot, player, now)
     slot.lookY = lookY
     slot.range = range
     slot.revision = revision
+    slot.presentationKey = presentationKey()
     slot.lastRefreshMs = now
     slot.validCone = true
 end
@@ -271,10 +336,10 @@ end
 ---@param player IsoPlayer
 ---@param now number
 function StealthOverhaul.refreshCones(layer, player, now)
-    if not SHOW_CONES or not layer.patchActive then
+    if not StealthOverhaul.showCones() or not layer.patchActive then
         return
     end
-    local cap = StealthOverhaul.displayCap or #layer.slots
+    local cap = StealthOverhaul.displayCap()
     local refreshed = 0
     local start = layer.coneCursor
     if start < 1 or start > cap then
@@ -282,7 +347,7 @@ function StealthOverhaul.refreshCones(layer, player, now)
     end
     local index = start
     for _ = 1, cap do
-        if refreshed >= CONE_REFRESH_PER_UPDATE then
+        if refreshed >= StealthOverhaul.coneRefreshPerUpdate() then
             break
         end
         local slot = layer.slots[index]
@@ -317,14 +382,17 @@ end
 ---@param dx number
 ---@param dy number
 function StealthOverhaul.drawCones(layer, player, dx, dy)
-    if not SHOW_CONES or not layer.patchActive then
+    if not StealthOverhaul.showCones() or not layer.patchActive then
         return
     end
     local playerIndex = layer.playerIndex
-    local cap = StealthOverhaul.displayCap or #layer.slots
+    local cap = StealthOverhaul.displayCap()
+    local innerColor = StealthOverhaul.coneInnerColor()
+    local outerColor = StealthOverhaul.coneOuterColor()
+    local lineColor = StealthOverhaul.coneLineColor()
     for s = 1, cap do
         local slot = layer.slots[s]
-        if slot ~= nil and slot.validCone and slot.zombie ~= nil then
+        if slot ~= nil and slot.validCone and slot.zombie ~= nil and slot.playerCanSee ~= false then
             local ox = isoToScreenX(playerIndex, slot.originX, slot.originY, slot.originZ) + dx
             local oy = isoToScreenY(playerIndex, slot.originX, slot.originY, slot.originZ) + dy
             local rayCount = #slot.wx
@@ -348,7 +416,7 @@ function StealthOverhaul.drawCones(layer, player, dx, dy)
                         innerY,
                         ox,
                         oy,
-                        CONE_INNER
+                        innerColor
                     )
                     drawBand(
                         layer,
@@ -360,17 +428,17 @@ function StealthOverhaul.drawCones(layer, player, dx, dy)
                         outerY,
                         innerX,
                         innerY,
-                        CONE_OUTER
+                        outerColor
                     )
                     layer:drawLine2(
                         prevOuterX,
                         prevOuterY,
                         outerX,
                         outerY,
-                        CONE_LINE.a,
-                        CONE_LINE.r,
-                        CONE_LINE.g,
-                        CONE_LINE.b
+                        lineColor.a,
+                        lineColor.r,
+                        lineColor.g,
+                        lineColor.b
                     )
                 end
                 prevOuterX = outerX
@@ -379,10 +447,10 @@ function StealthOverhaul.drawCones(layer, player, dx, dy)
                 prevInnerY = innerY
             end
             if prevOuterX ~= nil then
-                layer:drawLine2(ox, oy, prevOuterX, prevOuterY, CONE_LINE.a, CONE_LINE.r, CONE_LINE.g, CONE_LINE.b)
+                layer:drawLine2(ox, oy, prevOuterX, prevOuterY, lineColor.a, lineColor.r, lineColor.g, lineColor.b)
                 local firstX = isoToScreenX(playerIndex, slot.wx[1], slot.wy[1], slot.originZ) + dx
                 local firstY = isoToScreenY(playerIndex, slot.wx[1], slot.wy[1], slot.originZ) + dy
-                layer:drawLine2(ox, oy, firstX, firstY, CONE_LINE.a, CONE_LINE.r, CONE_LINE.g, CONE_LINE.b)
+                layer:drawLine2(ox, oy, firstX, firstY, lineColor.a, lineColor.r, lineColor.g, lineColor.b)
             end
         end
     end
