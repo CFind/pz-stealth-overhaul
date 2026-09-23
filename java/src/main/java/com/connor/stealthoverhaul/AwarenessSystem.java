@@ -48,6 +48,15 @@ public final class AwarenessSystem {
     }
 
     public DetectionConfig getConfig() {
+        try {
+            SandboxConfig.applyIfPresent(this);
+        } catch (Throwable ignored) {
+            // SandboxOptions is absent from JVM tests. Keep the stored snapshot.
+        }
+        return config;
+    }
+
+    DetectionConfig storedConfig() {
         return config;
     }
 

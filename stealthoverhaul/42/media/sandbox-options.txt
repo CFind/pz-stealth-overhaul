@@ -1,1 +1,271 @@
 VERSION = 1,
+
+/* Detection balance. Defaults match DetectionConfig. Bounds match SandboxConfig. */
+
+option StealthOverhaul.Enabled
+{
+    type = boolean,
+    default = true,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_Enabled,
+}
+
+option StealthOverhaul.DetectionThreshold
+{
+    type = double,
+    min = 0.05,
+    max = 10.0,
+    default = 1.0,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_DetectionThreshold,
+}
+
+option StealthOverhaul.BaseGainPerSecond
+{
+    type = double,
+    min = 0.0,
+    max = 5.0,
+    default = 0.35,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_BaseGainPerSecond,
+}
+
+option StealthOverhaul.MaxEvaluationDelta
+{
+    type = double,
+    min = 0.01,
+    max = 2.0,
+    default = 0.10,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_MaxEvaluationDelta,
+}
+
+option StealthOverhaul.DecayDelaySeconds
+{
+    type = double,
+    min = 0.0,
+    max = 60.0,
+    default = 0.50,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_DecayDelaySeconds,
+}
+
+option StealthOverhaul.DecayPerSecond
+{
+    type = double,
+    min = 0.0,
+    max = 5.0,
+    default = 0.25,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_DecayPerSecond,
+}
+
+option StealthOverhaul.ReacquireThreshold
+{
+    type = double,
+    min = 0.05,
+    max = 10.0,
+    default = 1.0,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_ReacquireThreshold,
+}
+
+option StealthOverhaul.MinimumVisionRange
+{
+    type = double,
+    min = 1.0,
+    max = 60.0,
+    default = 10.0,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_MinimumVisionRange,
+}
+
+option StealthOverhaul.MaximumVisionRange
+{
+    type = double,
+    min = 1.0,
+    max = 80.0,
+    default = 20.0,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_MaximumVisionRange,
+}
+
+option StealthOverhaul.CloseRange
+{
+    type = double,
+    min = 0.0,
+    max = 10.0,
+    default = 0.5,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_CloseRange,
+}
+
+option StealthOverhaul.MaximumFloorDifference
+{
+    type = integer,
+    min = 0,
+    max = 8,
+    default = 1,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_MaximumFloorDifference,
+}
+
+option StealthOverhaul.RearCutoffDot
+{
+    type = double,
+    min = -1.0,
+    max = 1.0,
+    default = -0.4,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_RearCutoffDot,
+}
+
+option StealthOverhaul.PeripheralStrength
+{
+    type = double,
+    min = 0.05,
+    max = 4.0,
+    default = 1.0,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_PeripheralStrength,
+}
+
+option StealthOverhaul.MinimumLightFactor
+{
+    type = double,
+    min = 0.0,
+    max = 1.0,
+    default = 0.0,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_MinimumLightFactor,
+}
+
+option StealthOverhaul.LightExponent
+{
+    type = double,
+    min = 0.05,
+    max = 8.0,
+    default = 1.0,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_LightExponent,
+}
+
+option StealthOverhaul.StationaryFactor
+{
+    type = double,
+    min = 0.0,
+    max = 5.0,
+    default = 0.8,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_StationaryFactor,
+}
+
+option StealthOverhaul.WalkingFactor
+{
+    type = double,
+    min = 0.0,
+    max = 5.0,
+    default = 1.0,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_WalkingFactor,
+}
+
+option StealthOverhaul.RunningFactor
+{
+    type = double,
+    min = 0.0,
+    max = 8.0,
+    default = 2.0,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_RunningFactor,
+}
+
+option StealthOverhaul.SneakSkillStrength
+{
+    type = double,
+    min = 0.0,
+    max = 4.0,
+    default = 1.0,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_SneakSkillStrength,
+}
+
+option StealthOverhaul.InconspicuousFactor
+{
+    type = double,
+    min = 0.0,
+    max = 3.0,
+    default = 0.8,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_InconspicuousFactor,
+}
+
+option StealthOverhaul.ConspicuousFactor
+{
+    type = double,
+    min = 0.0,
+    max = 3.0,
+    default = 1.2,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_ConspicuousFactor,
+}
+
+option StealthOverhaul.GoodSightFactor
+{
+    type = double,
+    min = 0.05,
+    max = 8.0,
+    default = 1.75,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_GoodSightFactor,
+}
+
+option StealthOverhaul.PoorSightFactor
+{
+    type = double,
+    min = 0.05,
+    max = 4.0,
+    default = 0.35,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_PoorSightFactor,
+}
+
+option StealthOverhaul.RainPenaltyStrength
+{
+    type = double,
+    min = 0.0,
+    max = 20.0,
+    default = 2.5,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_RainPenaltyStrength,
+}
+
+option StealthOverhaul.FogPenaltyStrength
+{
+    type = double,
+    min = 0.0,
+    max = 30.0,
+    default = 7.0,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_FogPenaltyStrength,
+}
+
+option StealthOverhaul.EatingVisionFactor
+{
+    type = double,
+    min = 0.0,
+    max = 1.0,
+    default = 0.5,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_EatingVisionFactor,
+}
+
+option StealthOverhaul.RecordExpirySeconds
+{
+    type = double,
+    min = 1.0,
+    max = 600.0,
+    default = 30.0,
+    page = StealthOverhaul,
+    translation = StealthOverhaul_RecordExpirySeconds,
+}

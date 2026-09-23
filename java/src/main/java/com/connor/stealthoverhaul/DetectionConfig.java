@@ -12,7 +12,8 @@ package com.connor.stealthoverhaul;
 
 /**
  * Immutable detection configuration snapshot. Defaults match
- * {@code docs/mod.md}; sandbox wiring is a later milestone.
+ * {@code docs/mod.md}. {@link SandboxConfig} replaces this snapshot when
+ * the sandbox values change.
  *
  * <p>Fields stay public. ZombieBuddy inlines spotted advice into
  * {@code IsoZombie}, which cannot see private members of this package.
@@ -153,6 +154,46 @@ public final class DetectionConfig {
 
     public static Builder copyDefaults() {
         return new Builder();
+    }
+
+    /**
+     * True when every tuned field matches, within a small float tolerance.
+     */
+    public boolean matches(DetectionConfig other) {
+        if (other == null) {
+            return false;
+        }
+        return enabled == other.enabled
+                && close(detectionThreshold, other.detectionThreshold)
+                && close(baseGainPerSecond, other.baseGainPerSecond)
+                && close(maxEvaluationDelta, other.maxEvaluationDelta)
+                && close(decayDelaySeconds, other.decayDelaySeconds)
+                && close(decayPerSecond, other.decayPerSecond)
+                && close(reacquireThreshold, other.reacquireThreshold)
+                && close(recordExpirySeconds, other.recordExpirySeconds)
+                && close(minimumVisionRange, other.minimumVisionRange)
+                && close(maximumVisionRange, other.maximumVisionRange)
+                && close(closeRange, other.closeRange)
+                && maximumFloorDifference == other.maximumFloorDifference
+                && close(rearCutoffDot, other.rearCutoffDot)
+                && close(peripheralStrength, other.peripheralStrength)
+                && close(minimumLightFactor, other.minimumLightFactor)
+                && close(lightExponent, other.lightExponent)
+                && close(stationaryFactor, other.stationaryFactor)
+                && close(walkingFactor, other.walkingFactor)
+                && close(runningFactor, other.runningFactor)
+                && close(sneakSkillStrength, other.sneakSkillStrength)
+                && close(inconspicuousFactor, other.inconspicuousFactor)
+                && close(conspicuousFactor, other.conspicuousFactor)
+                && close(goodSightFactor, other.goodSightFactor)
+                && close(poorSightFactor, other.poorSightFactor)
+                && close(rainPenaltyStrength, other.rainPenaltyStrength)
+                && close(fogPenaltyStrength, other.fogPenaltyStrength)
+                && close(eatingVisionFactor, other.eatingVisionFactor);
+    }
+
+    private static boolean close(float left, float right) {
+        return Math.abs(left - right) <= 0.0001f;
     }
 
     /**

@@ -1,0 +1,84 @@
+{
+    "Sandbox_StealthOverhaul": "Stealth Overhaul",
+
+    "Sandbox_StealthOverhaul_Enabled": "Enable visual detection",
+    "Sandbox_StealthOverhaul_Enabled_tooltip": "Use this mod's sight checks. Off leaves vanilla spotting in charge.",
+
+    "Sandbox_StealthOverhaul_DetectionThreshold": "Detection threshold",
+    "Sandbox_StealthOverhaul_DetectionThreshold_tooltip": "Awareness needed before a zombie detects the player. Higher is harder to get spotted.",
+
+    "Sandbox_StealthOverhaul_BaseGainPerSecond": "Base awareness gain",
+    "Sandbox_StealthOverhaul_BaseGainPerSecond_tooltip": "How fast awareness rises in clear view, before the other modifiers. Higher fills the meter faster.",
+
+    "Sandbox_StealthOverhaul_MaxEvaluationDelta": "Max catch-up time",
+    "Sandbox_StealthOverhaul_MaxEvaluationDelta_tooltip": "Longest hitch, in seconds, that one check can count. Higher lets a stall add more awareness.",
+
+    "Sandbox_StealthOverhaul_DecayDelaySeconds": "Decay delay",
+    "Sandbox_StealthOverhaul_DecayDelaySeconds_tooltip": "How long awareness stays put after the player leaves view, in seconds.",
+
+    "Sandbox_StealthOverhaul_DecayPerSecond": "Decay per second",
+    "Sandbox_StealthOverhaul_DecayPerSecond_tooltip": "How fast awareness falls after the delay. Higher means zombies forget sooner.",
+
+    "Sandbox_StealthOverhaul_ReacquireThreshold": "Reacquire threshold",
+    "Sandbox_StealthOverhaul_ReacquireThreshold_tooltip": "Awareness needed to detect again after the zombie has dropped its target. Higher makes a second detection harder.",
+
+    "Sandbox_StealthOverhaul_MinimumVisionRange": "Minimum vision range",
+    "Sandbox_StealthOverhaul_MinimumVisionRange_tooltip": "Shortest sight distance, in tiles. Keep this at or below maximum vision range, or detection turns off.",
+
+    "Sandbox_StealthOverhaul_MaximumVisionRange": "Maximum vision range",
+    "Sandbox_StealthOverhaul_MaximumVisionRange_tooltip": "Longest sight distance, in tiles. Keep this at or above minimum vision range, or detection turns off.",
+
+    "Sandbox_StealthOverhaul_CloseRange": "Close range",
+    "Sandbox_StealthOverhaul_CloseRange_tooltip": "Distance, in tiles, inside which facing no longer reduces awareness gain.",
+
+    "Sandbox_StealthOverhaul_MaximumFloorDifference": "Maximum floor difference",
+    "Sandbox_StealthOverhaul_MaximumFloorDifference_tooltip": "How many floors apart a zombie can still see the player.",
+
+    "Sandbox_StealthOverhaul_RearCutoffDot": "Rear vision cutoff",
+    "Sandbox_StealthOverhaul_RearCutoffDot_tooltip": "Facing cutoff. 1 is straight ahead and -1 is straight behind. Higher narrows vision toward the front.",
+
+    "Sandbox_StealthOverhaul_PeripheralStrength": "Peripheral strength",
+    "Sandbox_StealthOverhaul_PeripheralStrength_tooltip": "Scales awareness gain toward the edge of vision. Front gain stays the same. Higher makes side approaches easier to notice.",
+
+    "Sandbox_StealthOverhaul_MinimumLightFactor": "Minimum light factor",
+    "Sandbox_StealthOverhaul_MinimumLightFactor_tooltip": "Lowest exposure multiplier in darkness. Higher keeps the player easier to notice in the dark.",
+
+    "Sandbox_StealthOverhaul_LightExponent": "Light exponent",
+    "Sandbox_StealthOverhaul_LightExponent_tooltip": "Shapes how target-square light affects exposure. Higher makes dim light count for less.",
+
+    "Sandbox_StealthOverhaul_StationaryFactor": "Stationary factor",
+    "Sandbox_StealthOverhaul_StationaryFactor_tooltip": "Exposure multiplier while the player is still. Lower makes standing still quieter to notice.",
+
+    "Sandbox_StealthOverhaul_WalkingFactor": "Walking factor",
+    "Sandbox_StealthOverhaul_WalkingFactor_tooltip": "Exposure multiplier while the player is walking.",
+
+    "Sandbox_StealthOverhaul_RunningFactor": "Running factor",
+    "Sandbox_StealthOverhaul_RunningFactor_tooltip": "Exposure multiplier while the player is running. Higher makes sprinting easier to notice.",
+
+    "Sandbox_StealthOverhaul_SneakSkillStrength": "Sneak skill strength",
+    "Sandbox_StealthOverhaul_SneakSkillStrength_tooltip": "How much Sneaking changes exposure. Higher makes the skill matter more.",
+
+    "Sandbox_StealthOverhaul_InconspicuousFactor": "Inconspicuous factor",
+    "Sandbox_StealthOverhaul_InconspicuousFactor_tooltip": "Exposure multiplier for the Inconspicuous trait. Lower hides that trait more.",
+
+    "Sandbox_StealthOverhaul_ConspicuousFactor": "Conspicuous factor",
+    "Sandbox_StealthOverhaul_ConspicuousFactor_tooltip": "Exposure multiplier for the Conspicuous trait. Higher makes that trait easier to notice.",
+
+    "Sandbox_StealthOverhaul_GoodSightFactor": "Good sight",
+    "Sandbox_StealthOverhaul_GoodSightFactor_tooltip": "Sight-range multiplier for zombies with the good-sight lore. Higher lets them see farther.",
+
+    "Sandbox_StealthOverhaul_PoorSightFactor": "Poor sight",
+    "Sandbox_StealthOverhaul_PoorSightFactor_tooltip": "Sight-range multiplier for zombies with the poor-sight lore. Lower shortens their sight more.",
+
+    "Sandbox_StealthOverhaul_RainPenaltyStrength": "Rain penalty",
+    "Sandbox_StealthOverhaul_RainPenaltyStrength_tooltip": "How many tiles of sight heavy rain removes. Higher shortens vision more in the rain.",
+
+    "Sandbox_StealthOverhaul_FogPenaltyStrength": "Fog penalty",
+    "Sandbox_StealthOverhaul_FogPenaltyStrength_tooltip": "How many tiles of sight heavy fog removes. Higher shortens vision more in fog.",
+
+    "Sandbox_StealthOverhaul_EatingVisionFactor": "Eating vision factor",
+    "Sandbox_StealthOverhaul_EatingVisionFactor_tooltip": "Sight and exposure multiplier while the player is eating. Lower makes eating hide you more.",
+
+    "Sandbox_StealthOverhaul_RecordExpirySeconds": "Record expiry",
+    "Sandbox_StealthOverhaul_RecordExpirySeconds_tooltip": "How long an idle zombie-player awareness record is kept, in seconds."
+}
