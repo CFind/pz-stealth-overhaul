@@ -64,3 +64,21 @@
 	- 
 	- Will be attempting multiplayer testing in future. Work on singleplayer is fine while balancing
 	- Sandbox options still need to implemented
+
+- [ ] Directional cover (`docs/cover__implementation_specification.md`)
+
+- [ ] Crouch on a recognized `NWSE` bush/trash sprite: `cover=0`, `reason=cover`, and awareness does not gain from zombies on each side.
+
+- [ ] Put the same `NWSE` sprite only on the neighbor toward vs away from the zombie: only the searched toward-neighbor grants cover.
+
+- [ ] Check directional N/W fences from matching and nonmatching sides, including diagonal ties.
+
+- [ ] Check `fencing_01_4`, `_5`, and `_6`: matching placement reports approximately `cover=0.4` and takes 2.5 times the uncovered exposure time.
+
+- [ ] Stand beside recognized cover and crouch beside an unlisted object: both report `cover=1` when earlier gates pass.
+
+- [ ] Enter full cover before and after detection: gain/visual refresh stops, delayed decay continues, and cover alone does not immediately clear vanilla pursuit.
+
+- [ ] Repeat ordinary acquisition under both `ZombieLore.SpottedLogic` settings; verify incoming forced spotting still passes through.
+
+- [ ] Repeat representative cover cases in hosted multiplayer and on a dedicated server when available.

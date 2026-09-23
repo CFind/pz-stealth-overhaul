@@ -115,11 +115,40 @@ class DetectionFactorsTest {
     }
 
     @Test
-    void coverOnlyAppliesWhenSneakingOffSquareWithBonus() {
-        assertEquals(1.0f, DetectionFactors.coverFactor(false, false, 6.0f), EPS);
-        assertEquals(1.0f, DetectionFactors.coverFactor(true, true, 6.0f), EPS);
-        assertEquals(1.0f, DetectionFactors.coverFactor(true, false, 1.0f), EPS);
-        assertEquals(1.0f / 6.0f, DetectionFactors.coverFactor(true, false, 6.0f), EPS);
+    void coverUsesVisibleRemainderOfVanillaCoefficient() {
+        assertEquals(1.0f, DetectionFactors.coverFactor(0.0f), EPS);
+        assertEquals(0.4f, DetectionFactors.coverFactor(0.6f), EPS);
+        assertEquals(0.0f, DetectionFactors.coverFactor(1.0f), EPS);
+        assertEquals(0.0f, DetectionFactors.coverFactor(2.0f), EPS);
+        assertEquals(1.0f, DetectionFactors.coverFactor(-1.0f), EPS);
+        assertEquals(1.0f, DetectionFactors.coverFactor(Float.NaN), EPS);
+        assertEquals(1.0f, DetectionFactors.coverFactor(Float.POSITIVE_INFINITY), EPS);
+    }
+
+    @Test
+    void coverDiagnosticsResetAndCopyWithSnapshot() {
+        DetectionFactors source = DetectionFactors.identity();
+        source.coverEvaluated = true;
+        source.coverFactor = 0.4f;
+        DetectionFactors copy = new DetectionFactors();
+        source.copyTo(copy);
+        assertTrue(copy.coverEvaluated);
+        assertEquals(0.4f, copy.coverFactor, EPS);
+
+        copy.reset();
+        assertFalse(copy.coverEvaluated);
+        assertEquals(1.0f, copy.coverFactor, EPS);
+    }
+
+    @Test
+    void fullCoverHasNamedBlockedReasonAndNoMultiplier() {
+        DetectionFactors factors = DetectionFactors.identity();
+        factors.coverEvaluated = true;
+        factors.coverFactor = DetectionFactors.coverFactor(1.0f);
+        factors.block(DetectionFactors.BLOCKED_COVER);
+        assertFalse(factors.exposed);
+        assertEquals(DetectionFactors.BLOCKED_COVER, factors.blockedReason);
+        assertEquals(0.0f, factors.combinedMultiplier(), 0.0f);
     }
 
     @Test

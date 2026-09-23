@@ -362,6 +362,8 @@ public final class IsoZombieSpottedPatch {
                 + formatAwareness(record.lastEffectiveRange)
                 + " facing="
                 + formatAwareness(record.lastFacingDot)
+                + " cover="
+                + formatAwareness(record.lastCoverFactor)
                 + " reason="
                 + reason;
     }

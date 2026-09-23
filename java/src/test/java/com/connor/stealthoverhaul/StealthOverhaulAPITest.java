@@ -102,6 +102,7 @@ class StealthOverhaulAPITest {
         assertEquals(StealthOverhaulAPI.STATE_UNAWARE, StealthOverhaulAPI.getAwarenessState(zombie, player));
         assertEquals(0.0f, StealthOverhaulAPI.getEffectiveRange(zombie, player));
         assertEquals(0.0f, StealthOverhaulAPI.getExposureRate(zombie, player));
+        assertEquals(-1.0f, StealthOverhaulAPI.getLastCoverFactor(zombie, player));
         assertEquals("", StealthOverhaulAPI.getLastBlockedReason(zombie, player));
         assertFalse(StealthOverhaulAPI.wasLastExposed(zombie, player));
     }
@@ -118,6 +119,7 @@ class StealthOverhaulAPITest {
         record.lastGainMultiplier = 0.5f;
         record.lastDistance = 3.0f;
         record.lastFacingDot = 0.9f;
+        record.lastCoverFactor = 0.4f;
         record.lastExposed = true;
         record.lastBlockedReason = DetectionFactors.BLOCKED_NONE;
 
@@ -128,6 +130,7 @@ class StealthOverhaulAPITest {
         assertEquals(0.5f, StealthOverhaulAPI.getLastGainMultiplier(zombie, player), 1.0e-5f);
         assertEquals(3.0f, StealthOverhaulAPI.getLastDistance(zombie, player), 1.0e-5f);
         assertEquals(0.9f, StealthOverhaulAPI.getLastFacingDot(zombie, player), 1.0e-5f);
+        assertEquals(0.4f, StealthOverhaulAPI.getLastCoverFactor(zombie, player), 1.0e-5f);
         assertTrue(StealthOverhaulAPI.wasLastExposed(zombie, player));
         assertEquals(1, AwarenessSystem.getInstance().pairCount());
     }
@@ -142,6 +145,7 @@ class StealthOverhaulAPITest {
         assertFalse(StealthOverhaulAPI.isPatchActive());
         assertEquals(0.0f, StealthOverhaulAPI.getAwareness(zombie, player));
         assertEquals(StealthOverhaulAPI.STATE_UNAWARE, StealthOverhaulAPI.getAwarenessState(zombie, player));
+        assertEquals(-1.0f, StealthOverhaulAPI.getLastCoverFactor(zombie, player));
     }
 
     @Test

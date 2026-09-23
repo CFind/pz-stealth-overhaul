@@ -550,7 +550,8 @@ local function dumpPair(zombie, player)
     local ok, line = pcall(function()
         local awareness = StealthOverhaulAPI.getAwareness(zombie, player)
         local exposed = StealthOverhaulAPI.wasLastExposed(zombie, player)
-        if awareness <= 0 and not exposed then
+        local reason = StealthOverhaulAPI.getLastBlockedReason(zombie, player)
+        if awareness <= 0 and not exposed and reason ~= "cover" then
             return nil
         end
         return " awareness="
@@ -561,6 +562,8 @@ local function dumpPair(zombie, player)
             .. tostring(StealthOverhaulAPI.getLastDistance(zombie, player))
             .. " facing="
             .. tostring(StealthOverhaulAPI.getLastFacingDot(zombie, player))
+            .. " cover="
+            .. tostring(StealthOverhaulAPI.getLastCoverFactor(zombie, player))
             .. " gain="
             .. tostring(StealthOverhaulAPI.getLastGainMultiplier(zombie, player))
             .. " range="
@@ -568,7 +571,7 @@ local function dumpPair(zombie, player)
             .. " exposed="
             .. tostring(exposed)
             .. " reason="
-            .. tostring(StealthOverhaulAPI.getLastBlockedReason(zombie, player))
+            .. tostring(reason)
     end)
     if ok and line ~= nil then
         print(

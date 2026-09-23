@@ -157,6 +157,15 @@ public final class StealthOverhaulAPI {
         return record == null ? 0.0f : record.lastFacingDot;
     }
 
+    /**
+     * Last directional cover factor: -1 unavailable, 0 fully concealed,
+     * 0.4 partially concealed, and 1 no cover reduction.
+     */
+    public static float getLastCoverFactor(Object zombie, Object player) {
+        AwarenessRecord record = recordIfActive(zombie, player);
+        return record == null ? -1.0f : record.lastCoverFactor;
+    }
+
     public static String getLastBlockedReason(Object zombie, Object player) {
         AwarenessRecord record = recordIfActive(zombie, player);
         if (record == null || record.lastBlockedReason == null) {

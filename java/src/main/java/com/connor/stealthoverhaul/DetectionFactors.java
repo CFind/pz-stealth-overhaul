@@ -29,6 +29,7 @@ public final class DetectionFactors {
     public static final String BLOCKED_LOS = "los";
     public static final String BLOCKED_VEHICLE = "vehicle";
     public static final String BLOCKED_LIGHT = "light";
+    public static final String BLOCKED_COVER = "cover";
     public static final String BLOCKED_FACTOR = "factor";
 
     public static final DetectionFactors UNSCALED = identity();
@@ -47,6 +48,7 @@ public final class DetectionFactors {
     public float traitFactor = 1.0f;
     public float zombieSightFactor = 1.0f;
     public float weatherAndActivityFactor = 1.0f;
+    public boolean coverEvaluated;
     public float coverFactor = 1.0f;
     public float clothingFactor = 1.0f;
     public float vehicleFactor = 1.0f;
@@ -67,6 +69,7 @@ public final class DetectionFactors {
         traitFactor = 1.0f;
         zombieSightFactor = 1.0f;
         weatherAndActivityFactor = 1.0f;
+        coverEvaluated = false;
         coverFactor = 1.0f;
         clothingFactor = 1.0f;
         vehicleFactor = 1.0f;
@@ -90,6 +93,7 @@ public final class DetectionFactors {
         dest.traitFactor = traitFactor;
         dest.zombieSightFactor = zombieSightFactor;
         dest.weatherAndActivityFactor = weatherAndActivityFactor;
+        dest.coverEvaluated = coverEvaluated;
         dest.coverFactor = coverFactor;
         dest.clothingFactor = clothingFactor;
         dest.vehicleFactor = vehicleFactor;
@@ -293,17 +297,15 @@ public final class DetectionFactors {
     }
 
     /**
-     * Sneak-near-cover using {@code checkIsNearWall()} like spottedOld
-     * ({@code IsoZombie.java:2720-2731}). Bonus {@code <= 1} means no cover.
+     * Directional shelter from {@code spottedNew}: the vanilla table stores
+     * the fraction concealed, while exposure uses the visible remainder
+     * ({@code IsoZombie.java:2050-2060, 2244-2261}).
      */
-    public static float coverFactor(boolean sneaking, boolean sameSquare, float sneakTileBonus) {
-        if (!sneaking || sameSquare) {
+    public static float coverFactor(float coverCoefficient) {
+        if (!Float.isFinite(coverCoefficient)) {
             return 1.0f;
         }
-        if (!Float.isFinite(sneakTileBonus) || sneakTileBonus <= 1.0f) {
-            return 1.0f;
-        }
-        return 1.0f / sneakTileBonus;
+        return 1.0f - clamp(coverCoefficient, 0.0f, 1.0f);
     }
 
     /**

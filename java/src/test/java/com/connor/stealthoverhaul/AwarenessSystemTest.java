@@ -337,6 +337,72 @@ class AwarenessSystemTest {
         assertFalse(record.lastExposed);
     }
 
+    @Test
+    void partialCoverScalesOtherwiseIdenticalGain() {
+        AwarenessSystem uncoveredSystem = new AwarenessSystem();
+        AwarenessRecord uncovered = uncoveredSystem.getOrCreate(new Object(), new Object());
+        DetectionFactors uncoveredFactors = DetectionFactors.identity();
+        uncoveredFactors.coverEvaluated = true;
+        uncoveredFactors.coverFactor = 1.0f;
+        uncoveredSystem.evaluate(uncovered, TICK, 0.0, uncoveredFactors, false);
+
+        AwarenessSystem coveredSystem = new AwarenessSystem();
+        AwarenessRecord covered = coveredSystem.getOrCreate(new Object(), new Object());
+        DetectionFactors partial = DetectionFactors.identity();
+        partial.coverEvaluated = true;
+        partial.coverFactor = 0.4f;
+        coveredSystem.evaluate(covered, TICK, 0.0, partial, false);
+
+        assertEquals(uncovered.awareness * 0.4f, covered.awareness, 1.0e-5f);
+        assertEquals(0.4f, covered.lastCoverFactor, 1.0e-5f);
+        assertTrue(covered.lastExposed);
+    }
+
+    @Test
+    void fullCoverStopsGainPromotionAndVisualRefreshWithoutClearingPursuit() {
+        AwarenessSystem system = new AwarenessSystem();
+        AwarenessRecord record = system.getOrCreate(new Object(), new Object());
+        system.markAccepted(record, true);
+        record.awareness = 1.0f;
+        record.awarenessAtExposure = 1.0f;
+        record.lastExposureHours = 0.0;
+
+        DetectionFactors fullCover = DetectionFactors.identity();
+        fullCover.coverEvaluated = true;
+        fullCover.coverFactor = 0.0f;
+        fullCover.block(DetectionFactors.BLOCKED_COVER);
+
+        boolean promote = system.evaluate(record, TICK, 1.0 * HOUR, fullCover, true);
+        assertFalse(promote);
+        assertEquals(0.0, record.lastExposureHours, 0.0);
+        assertEquals(AwarenessState.DETECTED, record.state);
+        assertTrue(record.lastAcceptedTarget);
+        assertFalse(record.lastExposed);
+        assertEquals(0.0f, record.lastCoverFactor, 0.0f);
+        assertEquals(DetectionFactors.BLOCKED_COVER, record.lastBlockedReason);
+        assertTrue(record.awareness < 1.0f);
+    }
+
+    @Test
+    void leavingFullCoverResumesExposureAndPromotion() {
+        AwarenessSystem system = new AwarenessSystem();
+        AwarenessRecord record = system.getOrCreate(new Object(), new Object());
+        record.awareness = 1.0f;
+        record.state = AwarenessState.SUSPICIOUS;
+
+        DetectionFactors fullCover = DetectionFactors.identity();
+        fullCover.coverEvaluated = true;
+        fullCover.coverFactor = 0.0f;
+        fullCover.block(DetectionFactors.BLOCKED_COVER);
+        assertFalse(system.evaluate(record, TICK, 0.0, fullCover, false));
+
+        DetectionFactors uncovered = DetectionFactors.identity();
+        uncovered.coverEvaluated = true;
+        assertTrue(system.evaluate(record, TICK, TICK * HOUR, uncovered, false));
+        assertTrue(record.lastExposed);
+        assertEquals(1.0f, record.lastCoverFactor, 0.0f);
+    }
+
     private static int ticksUntilPromote(AwarenessSystem system, AwarenessRecord record) {
         double hoursPerTick = TICK / 3600.0;
         for (int tick = 1; tick <= 40; tick++) {

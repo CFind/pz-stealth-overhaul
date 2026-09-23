@@ -16,10 +16,13 @@ import zombie.SandboxOptions;
 import zombie.characters.IsoPlayer;
 import zombie.characters.IsoZombie;
 import zombie.iso.IsoCell;
+import zombie.iso.IsoDirections;
 import zombie.iso.IsoGridSquare;
+import zombie.iso.IsoObject;
 import zombie.iso.IsoWorld;
 import zombie.iso.LosUtil;
 import zombie.iso.Vector2;
+import zombie.iso.sprite.IsoSprite;
 import zombie.iso.weather.ClimateManager;
 import zombie.network.GameServer;
 import zombie.scripting.objects.CharacterTrait;
@@ -30,9 +33,10 @@ import zombie.vehicles.BaseVehicle;
  * {@link DetectionFactors} so JVM tests do not need a running game.
  *
  * <p>Uses public engine APIs only. Vanilla's private
- * {@code updateVisionRadius}, {@code getObstacleMod}, and
- * {@code isVehicleBetween} are reproduced from
- * {@code characters/IsoZombie.java:2050-2060, 2262-2270, 2426-2445, 5542-5573}.
+ * {@code updateVisionRadius} and {@code isVehicleBetween} are reproduced from
+ * {@code characters/IsoZombie.java:2262-2270, 2426-2445, 5542-5573}.
+ * Directional cover is ported through {@link CoverSystem} from
+ * {@code characters/IsoZombie.java:346-539, 2012-2060, 2244-2261}.
  *
  * <p>Every member is public. ZombieBuddy inlines spotted advice into
  * {@code IsoZombie}, which cannot see private members of this class.
@@ -41,6 +45,34 @@ public final class ExposureEvaluator {
     public static final ThreadLocal<DetectionFactors> SCRATCH =
             ThreadLocal.withInitial(DetectionFactors::new);
     public static final ThreadLocal<Vector2> LOOK = new ThreadLocal<Vector2>();
+    public static final CoverSystem.SquareAccess<IsoGridSquare> COVER_SQUARE_ACCESS =
+            new CoverSystem.SquareAccess<IsoGridSquare>() {
+                @Override
+                public int objectCount(IsoGridSquare square) {
+                    return square == null || square.getObjects() == null ? 0 : square.getObjects().size();
+                }
+
+                @Override
+                public String spriteNameAt(IsoGridSquare square, int index) {
+                    if (square == null || square.getObjects() == null) {
+                        return null;
+                    }
+                    IsoObject object = square.getObjects().get(index);
+                    if (object == null) {
+                        return null;
+                    }
+                    IsoSprite sprite = object.getSprite();
+                    return sprite == null ? null : sprite.getName();
+                }
+
+                @Override
+                public IsoGridSquare adjacent(IsoGridSquare square, CoverSystem.Direction direction) {
+                    if (square == null || direction == null) {
+                        return null;
+                    }
+                    return square.getAdjacentSquare(toIsoDirection(direction));
+                }
+            };
 
     public static Vector2 lookVector() {
         Vector2 look = LOOK.get();
@@ -180,11 +212,20 @@ public final class ExposureEvaluator {
                 DetectionFactors.weatherAndActivityFactor(eating, inactive, config);
 
         boolean sameSquare = zombieSquare == playerSquare;
-        float sneakTileBonus = 0.0f;
-        if (sneaking && !sameSquare) {
-            sneakTileBonus = player.checkIsNearWall();
+        float coverCoefficient = CoverSystem.resolveCoefficient(
+                sneaking,
+                sameSquare,
+                zombieSquare.getX(),
+                zombieSquare.getY(),
+                playerSquare.getX(),
+                playerSquare.getY(),
+                playerSquare,
+                COVER_SQUARE_ACCESS);
+        factors.coverEvaluated = true;
+        factors.coverFactor = DetectionFactors.coverFactor(coverCoefficient);
+        if (factors.coverFactor <= 0.0f) {
+            return factors.block(DetectionFactors.BLOCKED_COVER);
         }
-        factors.coverFactor = DetectionFactors.coverFactor(sneaking, sameSquare, sneakTileBonus);
         factors.clothingFactor = DetectionFactors.clothingFactor(wornVision);
 
         return factors.markExposed();
@@ -286,5 +327,20 @@ public final class ExposureEvaluator {
             return 2;
         }
         return 2;
+    }
+
+    public static IsoDirections toIsoDirection(CoverSystem.Direction direction) {
+        switch (direction) {
+            case N:
+                return IsoDirections.N;
+            case W:
+                return IsoDirections.W;
+            case S:
+                return IsoDirections.S;
+            case E:
+                return IsoDirections.E;
+            default:
+                throw new IllegalArgumentException("Unsupported cover direction: " + direction);
+        }
     }
 }

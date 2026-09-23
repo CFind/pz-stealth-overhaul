@@ -32,6 +32,7 @@ public final class AwarenessRecord {
     public float lastDistance;
     public float lastFacingDot;
     public float lastEffectiveRange;
+    public float lastCoverFactor = -1.0f;
     public String lastBlockedReason = DetectionFactors.BLOCKED_NONE;
 
     public float getAwareness() {
@@ -53,6 +54,7 @@ public final class AwarenessRecord {
             lastDistance = 0.0f;
             lastFacingDot = 0.0f;
             lastEffectiveRange = 0.0f;
+            lastCoverFactor = -1.0f;
             lastBlockedReason = DetectionFactors.BLOCKED_FACTOR;
             return;
         }
@@ -61,6 +63,7 @@ public final class AwarenessRecord {
         lastDistance = factors.distance;
         lastFacingDot = factors.facingDot;
         lastEffectiveRange = factors.effectiveRange;
+        lastCoverFactor = factors.coverEvaluated ? factors.coverFactor : -1.0f;
         lastBlockedReason = factors.blockedReason == null ? DetectionFactors.BLOCKED_NONE : factors.blockedReason;
     }
 }
